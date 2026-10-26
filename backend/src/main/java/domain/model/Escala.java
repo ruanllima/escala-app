@@ -15,21 +15,25 @@ public class Escala {
     private List<Participacao> participacoes;
 
     public Escala(Long id, Evento evento, Ministerio ministerio){
-
+        this.id = id;
         this.evento = Objects.requireNonNull(evento, "Insira um evento válido.");
         this.ministerio = Objects.requireNonNull(ministerio, "Insira um ministério válido.");
         this.statusEscala = StatusEscala.EM_ANDAMENTO;
         this.participacoes = new ArrayList<Participacao>();
     }
 
-    private void validarAlteracao(StatusEscala status){
-        if (status != StatusEscala.EM_ANDAMENTO){
-            throw new IllegalArgumentException("Não é possível alterar uma escala que não esteja em andamento.");
+    public List<Participacao> getParticipacoes() {
+        return java.util.Collections.unmodifiableList(this.participacoes);
+    }
+
+    private void validarAlteracao(){
+        if (this.statusEscala != StatusEscala.EM_ANDAMENTO){
+            throw new IllegalStateException("Não é possível alterar uma escala que não esteja em andamento.");
         }
     }
 
     public void adicionarParticipacao(Usuario usuario, Funcao funcao){
-        validarAlteracao(this.statusEscala);
+        validarAlteracao();
         // verifica se o usuário já existe
         boolean usuarioJaEscalado = this.participacoes.stream()
                 .anyMatch(p -> p.getUsuario().equals(usuario));
@@ -43,20 +47,27 @@ public class Escala {
         }
 
         Participacao novaParticipacao = new Participacao(usuario, funcao);
+        this.participacoes.add(novaParticipacao);
     }
 
-    public void removerParticipacao(Participacao participacao){
-        validarAlteracao(this.statusEscala);
-        // verifica se o usuário já existe
-        boolean usuarioJaEscalado = this.participacoes.stream()
-                .anyMatch(p -> p.getUsuario().equals(usuario));
+    public void removerParticipacao(Usuario usuario) {
+        validarAlteracao();
+        boolean removido = this.participacoes.removeIf(p -> p.getUsuario().equals(usuario));
 
-        // se o usuário não existir, lança exceção
-        if (!usuarioJaEscalado){
-            throw new IllegalArgumentException("Este usuário não existe nesta escala.");
+        if (!removido) {
+            throw new IllegalArgumentException("Este usuário não está escalado nesta escala.");
         }
-
-        participacoes.remove(participacao);
     }
 
-}
+    public void concluir() {
+        validarAlteracao();
+        this.statusEscala = StatusEscala.CONCLUIDA;
+    }
+
+    public void cancelar() {
+        validarAlteracao();
+        this.statusEscala = StatusEscala.CANCELADA;
+    }
+ }
+
+
